@@ -1,17 +1,18 @@
 import streamlit as st
 
-# Настройка страницы (убираем лишнее, скрываем сайдбар)
+# Настройка страницы (максимально чисто, без лишних элементов)
 st.set_page_config(
     page_title="Прогноз САД",
     initial_sidebar_state="collapsed"
 )
 
-# --- CSS Стилизация (чтобы выглядело как на скриншоте) ---
+# --- CSS Стилизация ---
 st.markdown("""
     <style>
-    /* Скрываем стандартное меню и футер */
+    /* Скрываем меню и футер */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
+    header {visibility: hidden;}
     
     /* Центрируем заголовок */
     h1 {
@@ -20,29 +21,32 @@ st.markdown("""
         font-weight: 700;
         margin-bottom: 30px;
         color: #000;
+        font-family: sans-serif;
     }
     
-    /* Стилизация заголовков полей ввода */
+    /* Стилизация подписей к полям */
     .input-label {
         font-weight: 600;
         font-size: 16px;
         margin-bottom: 5px;
+        margin-top: 10px;
+        font-family: sans-serif;
     }
 
-    /* Зеленая кнопка "Рассчитать" во всю ширину */
+    /* Зеленая кнопка "Рассчитать" */
     div.stButton > button {
         width: 100%;
-        background-color: #28a745; /* Зеленый цвет */
+        background-color: #28a745;
         color: white;
         font-weight: bold;
         font-size: 18px;
         border: none;
         border-radius: 5px;
-        padding: 10px 0;
-        margin-top: 10px;
+        padding: 12px 0;
+        margin-top: 25px;
     }
     div.stButton > button:hover {
-        background-color: #218838; /* Темно-зеленый при наведении */
+        background-color: #218838;
         color: white;
         border: none;
     }
@@ -50,15 +54,31 @@ st.markdown("""
         background-color: #1e7e34;
         color: white;
     }
+    div.stButton > button:focus {
+        color: white; 
+        background-color: #28a745;
+    }
 
     /* Серое поле результата */
-    .result-container {
-        background-color: #e9ecef; /* Светло-серый фон */
+    .result-box {
+        background-color: #e9ecef;
         padding: 20px;
         border-radius: 5px;
         margin-top: 20px;
+        text-align: center;
+        border: 1px solid #ced4da;
+    }
+    .result-text {
         font-size: 18px;
+        color: #333;
+        margin-bottom: 5px;
+        font-family: sans-serif;
+    }
+    .result-value {
+        font-size: 28px;
+        font-weight: 800;
         color: #000;
+        font-family: sans-serif;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -66,42 +86,39 @@ st.markdown("""
 # --- Заголовок ---
 st.markdown("<h1>Прогнозирование значение систолического артериального давления перед операцией</h1>", unsafe_allow_html=True)
 
-# --- Поля ввода ---
+# --- Ввод данных ---
 
 # 1. Вес
 st.markdown('<div class="input-label">Вес пациента (кг)</div>', unsafe_allow_html=True)
 weight = st.number_input(
-    "Вес", 
+    "label_weight", 
     min_value=30.0, 
     max_value=250.0, 
     value=70.0, 
     step=0.5, 
-    label_visibility="collapsed" # Скрываем стандартный лейбл, используем свой CSS выше
-)
-
-# Отступ
-st.write("") 
-
-# 2. Обезвоживание
-st.markdown('<div class="input-label">Наличие обезвоживания</div>', unsafe_allow_html=True)
-dehydration_str = st.selectbox(
-    "Обезвоживание", 
-    options=["Нет", "Да"], 
     label_visibility="collapsed"
 )
 
-# --- Логика расчета ---
-# Преобразуем выбор в цифры: Нет=0, Да=1
-dehydration_val = 1 if dehydration_str == "Да" else 0
+# 2. Гематокрит
+st.markdown('<div class="input-label">Уровень гематокрита (Ht)</div>', unsafe_allow_html=True)
+ht_option = st.selectbox(
+    "label_ht",
+    options=["Менее 44%", "44% и выше"],
+    label_visibility="collapsed"
+)
 
-# Формула: 109.725 + 0.219*Вес + 8.515*Наличие
-prediction = 109.725 + (0.219 * weight) + (8.515 * dehydration_val)
+# --- Расчет ---
+# Логика: Если выбрали "44% и выше", то X = 1, иначе X = 0
+ht_factor = 1 if ht_option == "44% и выше" else 0
 
-# --- Кнопка и Результат ---
+# Новое уравнение: 109.116 + 0.224*Вес + 8.749*Ht
+prediction = 109.116 + (0.224 * weight) + (8.749 * ht_factor)
+
+# --- Кнопка и Вывод ---
 if st.button("Рассчитать"):
     st.markdown(f"""
-        <div class="result-container">
-            <b>Результат прогноза САД:</b><br>
-            <span style="font-size: 24px; font-weight: bold;">{prediction:.2f} мм рт. ст.</span>
+        <div class="result-box">
+            <div class="result-text">Прогнозируемое САД:</div>
+            <div class="result-value">{prediction:.1f} мм рт. ст.</div>
         </div>
     """, unsafe_allow_html=True)
